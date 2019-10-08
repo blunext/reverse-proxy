@@ -4,13 +4,15 @@ import (
 	"Proxy/config"
 	"Proxy/proxy"
 	"crypto/tls"
-	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -18,24 +20,38 @@ func initParams() config.Params {
 
 	params := config.Params{}
 
-	params.ScannerTargetUrl.Scheme = []byte(targetScheme)
-	params.ScannerTargetUrl.Host = []byte(targetHost)
+	target := flag.String("target", "https://abc.xyz", "terget url")
+	local := flag.String("proxy", "http://localhost:8080", "proxy url")
 
-	params.ScannerProxyUrl.Scheme = []byte(proxyScheme)
-	params.ScannerProxyUrl.Host = []byte(proxyHost)
-	params.ScannerProxyUrl.Port = []byte(proxyPort)
+	flag.Parse()
+
+	var err error
+	if params.TargetUrl, err = url.ParseRequestURI(*target); err != nil {
+		fmt.Println("target url is invalid")
+		os.Exit(0)
+	}
+	if params.ProxyUrl, err = url.ParseRequestURI(*local); err != nil {
+		log.Panic("błędny url proxt")
+	}
+
+	params.ScannerTargetUrl.Scheme = []byte(params.TargetUrl.Scheme)
+	params.ScannerTargetUrl.Host = []byte(params.TargetUrl.Host)
+
+	params.ScannerProxyUrl.Scheme = []byte(params.ProxyUrl.Scheme)
+
+	s := strings.Split(params.ProxyUrl.Host, ":")
+	if len(s) == 1 {
+		params.ScannerProxyUrl.Host = []byte(params.ProxyUrl.Host)
+		params.ScannerProxyUrl.Port = []byte(":80")
+	} else {
+		params.ScannerProxyUrl.Host = []byte(s[0])
+		params.ScannerProxyUrl.Port = []byte(":" + s[1])
+	}
 
 	params.Config.Debug = debug
 	params.Config.DebugBody = debugBody
 	params.Config.SaveBodyRequestToFile = saveBodyRequestToFile
 
-	err := errors.New("")
-	if params.TargetUrl, err = url.Parse(fmt.Sprintf("%s://%s", targetScheme, targetHost)); err != nil {
-		log.Panic("błędny url target")
-	}
-	if params.ProxyUrl, err = url.Parse(fmt.Sprintf("%s://%s%s", proxyScheme, proxyHost, proxyPort)); err != nil {
-		log.Panic("błędny url proxt")
-	}
 	return params
 }
 
@@ -79,10 +95,10 @@ func main() {
 }
 
 const (
-	targetHost            string = "allegro.pl"
-	targetScheme          string = "https"
-	proxyHost             string = "localhost"
-	proxyScheme           string = "https"
+	//targetHost            string = "allegro.pl"
+	//targetScheme          string = "https"
+	//proxyHost             string = "localhost"
+	//proxyScheme           string = "https"
 	proxyPort             string = ":9013"
 	debugBody             bool   = false
 	debug                 bool   = false
