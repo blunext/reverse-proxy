@@ -79,7 +79,7 @@ func main() {
 }
 
 const (
-	targetHost            string = "olamundo.pl"
+	targetHost            string = "allegro.pl"
 	targetScheme          string = "https"
 	proxyHost             string = "localhost"
 	proxyScheme           string = "https"

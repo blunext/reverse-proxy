@@ -18,7 +18,7 @@ func (url *Url) CheckValidDomain() bool {
 	if string(url.Host) == "localhost" {
 		return true
 	}
-	i := bytes.LastIndex(url.Host, []byte(".")) // TODO : dodac więcej kropek
+	i := bytes.LastIndex(url.Host, []byte(".")) // TODO : add more dots
 	if i == -1 {
 		return false
 	}
