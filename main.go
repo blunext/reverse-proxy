@@ -20,8 +20,8 @@ func initParams() config.Params {
 
 	params := config.Params{}
 
-	target := flag.String("target", "https://abc.xyz", "terget url")
-	local := flag.String("proxy", "http://localhost:8080", "proxy url")
+	target := flag.String("target", "https://www.google.com", "terget url")
+	local := flag.String("proxy", "https://localhost:9013", "proxy url")
 
 	flag.Parse()
 
@@ -91,7 +91,7 @@ func main() {
 	})
 	//log.Fatal(http.ListenAndServe(proxyPort, nil))
 	path := "/Users/tom/.ssh/localhost-ssl/"
-	log.Fatal(http.ListenAndServeTLS(proxyPort, fmt.Sprintf("%slocalhost.crt", path), fmt.Sprintf("%slocalhost.key", path), nil))
+	log.Fatal(http.ListenAndServeTLS(string(params.ScannerProxyUrl.Port), fmt.Sprintf("%slocalhost.crt", path), fmt.Sprintf("%slocalhost.key", path), nil))
 }
 
 const (
@@ -99,10 +99,10 @@ const (
 	//targetScheme          string = "https"
 	//proxyHost             string = "localhost"
 	//proxyScheme           string = "https"
-	proxyPort             string = ":9013"
-	debugBody             bool   = false
-	debug                 bool   = false
-	saveBodyRequestToFile bool   = false
+	//proxyPort             string = ":9013"
+	debugBody             bool = false
+	debug                 bool = false
+	saveBodyRequestToFile bool = false
 )
 
 /*
