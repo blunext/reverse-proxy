@@ -16,5 +16,7 @@ type Params struct {
 	ProxyUrl         *url.URL
 	ScannerTargetUrl domain.Url
 	ScannerProxyUrl  domain.Url
+	CerFile          string
+	KeyFile          string
 	Config
 }

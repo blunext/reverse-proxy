@@ -16,22 +16,47 @@ import (
 	"time"
 )
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func initParams() config.Params {
 
 	params := config.Params{}
 
-	target := flag.String("target", "https://www.google.com", "terget url")
+	target := flag.String("target", "https://www.google.com", "target url")
 	local := flag.String("proxy", "https://localhost:9013", "proxy url")
+	path := "/Users/tom/.ssh/localhost-ssl/"
+	flag.StringVar(&params.CerFile, "certFile", fmt.Sprintf("%slocalhost.crt", path), "path to cert file")
+	flag.StringVar(&params.KeyFile, "keyFile", fmt.Sprintf("%slocalhost.key", path), "path to key file")
 
 	flag.Parse()
 
 	var err error
 	if params.TargetUrl, err = url.ParseRequestURI(*target); err != nil {
 		fmt.Println("target url is invalid")
+		flag.PrintDefaults()
 		os.Exit(0)
 	}
 	if params.ProxyUrl, err = url.ParseRequestURI(*local); err != nil {
-		log.Panic("błędny url proxt")
+		fmt.Println("proxy url is invalid")
+		flag.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if params.ProxyUrl.Scheme != "http" {
+		if !fileExists(params.CerFile) {
+			fmt.Println("specify certFile")
+			os.Exit(0)
+		}
+		if !fileExists(params.KeyFile) {
+			fmt.Println("specify keyFile")
+			os.Exit(0)
+		}
 	}
 
 	params.ScannerTargetUrl.Scheme = []byte(params.TargetUrl.Scheme)
@@ -90,8 +115,9 @@ func main() {
 
 	})
 	//log.Fatal(http.ListenAndServe(proxyPort, nil))
-	path := "/Users/tom/.ssh/localhost-ssl/"
-	log.Fatal(http.ListenAndServeTLS(string(params.ScannerProxyUrl.Port), fmt.Sprintf("%slocalhost.crt", path), fmt.Sprintf("%slocalhost.key", path), nil))
+	log.Fatal(http.ListenAndServeTLS(string(params.ScannerProxyUrl.Port), params.CerFile, params.KeyFile, nil))
+	//log.Fatal(http.ListenAndServeTLS(string(params.ScannerProxyUrl.Port), fmt.Sprintf("%slocalhost.crt", path), fmt.Sprintf("%slocalhost.key", path), nil))
+	// ./aaa -proxy https://localhost:9013 -target https://wiki.mbank.pl -certFile /Users/tomek/.ssh/localhost-ssl/localhost.crt -keyFile /Users/tomek/.ssh/localhost-ssl/localhost.key
 }
 
 const (
