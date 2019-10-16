@@ -212,6 +212,7 @@ func NewScanner() *scanner {
 
 func (s *scanner) Scan(body []byte, urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) []byte {
 	s.body = body
+	s.newBody = make([]byte, 0, len(body)+extendNewBodyByteSize)
 	s.scan(urlAction, aloneDomainNameAlso, params)
 	if urlAction != nil {
 		return s.newBody
