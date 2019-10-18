@@ -114,14 +114,12 @@ func main() {
 		log.Fatal(http.ListenAndServe(string(params.ScannerProxyUrl.Port), nil))
 	} else {
 		log.Fatal(http.ListenAndServeTLS(string(params.ScannerProxyUrl.Port), params.CerFile, params.KeyFile, nil))
-		// ./aaa -proxy https://localhost:9013 -target https://wiki.mbank.pl -certFile /Users/tomek/.ssh/localhost-ssl/localhost.crt -keyFile /Users/tomek/.ssh/localhost-ssl/localhost.key
 	}
 
 }
 
 const (
-	targetUrl string = "https://olamundo.pl"
-	//targetUrl string = "https://www.google.com"
+	targetUrl             string = "https://abc.xyz"
 	proxyUrl              string = "https://localhost:9013"
 	debugBody             bool   = false
 	debug                 bool   = false
