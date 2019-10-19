@@ -30,9 +30,8 @@ func initParams() config.Params {
 
 	target := flag.String("target", targetUrl, "target url")
 	local := flag.String("proxy", proxyUrl, "proxy url")
-	path := "/Users/tom/.ssh/localhost-ssl/"
-	flag.StringVar(&params.CerFile, "certFile", fmt.Sprintf("%slocalhost.crt", path), "path to cert file")
-	flag.StringVar(&params.KeyFile, "keyFile", fmt.Sprintf("%slocalhost.key", path), "path to key file")
+	flag.StringVar(&params.CerFile, "certFile", "", "path to cert file")
+	flag.StringVar(&params.KeyFile, "keyFile", "", "path to key file")
 
 	flag.Parse()
 
@@ -84,15 +83,6 @@ func main() {
 
 	params := initParams()
 
-	//f, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	//if err != nil {
-	//	log.Fatalf("error opening file: %v", err)
-	//}
-	//defer f.Close()
-	//wrt := io.MultiWriter(os.Stdout, f)
-	//log.SetOutput(wrt)
-	//log.Println(" main")
-
 	reverseProxy := &httputil.ReverseProxy{
 		Director:       proxy.ProcessRequest(params),
 		ModifyResponse: proxy.ProcessResponse(params),
@@ -107,7 +97,6 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		reverseProxy.ServeHTTP(w, r)
-
 	})
 
 	if params.ProxyUrl.Scheme == "http" {

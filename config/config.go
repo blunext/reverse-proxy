@@ -9,6 +9,8 @@ type Config struct {
 	DebugBody             bool
 	Debug                 bool
 	SaveBodyRequestToFile bool
+	CerFile               string
+	KeyFile               string
 }
 
 type Params struct {
@@ -16,7 +18,5 @@ type Params struct {
 	ProxyUrl         *url.URL
 	ScannerTargetUrl domain.Url
 	ScannerProxyUrl  domain.Url
-	CerFile          string
-	KeyFile          string
 	Config
 }

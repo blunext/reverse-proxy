@@ -13,7 +13,7 @@ import (
 
 func ProcessResponse(params config.Params) func(response *http.Response) error {
 
-	return func(response *http.Response) error { // don't parse websockets
+	return func(response *http.Response) error {
 		if response.StatusCode == http.StatusSwitchingProtocols {
 			return nil
 		}
@@ -28,6 +28,7 @@ func ProcessResponse(params config.Params) func(response *http.Response) error {
 			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
 				log.Printf("Error reading body: %v", err)
+				return err
 			}
 
 			err = response.Body.Close()

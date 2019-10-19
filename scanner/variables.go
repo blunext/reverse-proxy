@@ -1,6 +1,5 @@
 package scanner
 
-//var beforePatterns = [...]string{` `, `'`, `"`}
 var schemaPatterns = [][]byte{
 	[]byte(`https`), []byte(`http`),
 	//[]byte(`wss`), []byte(`wss`)
@@ -14,7 +13,6 @@ var slashSlashPatterns = [][]byte{
 	[]byte(`\u002f\u002f`),
 	[]byte(`%2f%2f`),
 	[]byte(`&#x2f;&#x2f;`),
-	//[]byte(`%2F%2F`), ---> co to jest?
 	[]byte(`\\u00252f\\u00252f`),
 	[]byte(`\u00252f\u00252f`),
 }

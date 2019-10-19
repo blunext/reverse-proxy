@@ -26,7 +26,7 @@ func (s *scanner) getPort() {
 	s.index = x
 }
 
-func (s *scanner) getPathAndQuery(urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) {
+func (s *scanner) getPathAndQuery(urlAction domain.UrlAction, parseHostAlone bool, params config.Params) {
 	if s.index >= len(s.body) {
 		return
 	}
@@ -34,7 +34,7 @@ func (s *scanner) getPathAndQuery(urlAction domain.UrlAction, aloneDomainNameAls
 	if urlAction == nil {
 		s.url.Path = s.body[s.index:x]
 	} else {
-		s.url.Path = scan(s.body[s.index:x], urlAction, aloneDomainNameAlso, params)
+		s.url.Path = scan(s.body[s.index:x], urlAction, parseHostAlone, params)
 	}
 	s.index = x
 
@@ -139,21 +139,21 @@ func (s *scanner) findSchemeSeparator() bool {
 	return false
 }
 
-func (s *scanner) scanForPortAndPath(urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) {
+func (s *scanner) scanForPortAndPath(urlAction domain.UrlAction, parseHostAlone bool, params config.Params) {
 	if s.findAndSetPatterns(colonPatterns, &s.url.Port) {
 		s.getPort()
 	} else {
 		s.url.Port = nil
 	}
-	s.getPathAndQuery(urlAction, aloneDomainNameAlso, params)
+	s.getPathAndQuery(urlAction, parseHostAlone, params)
 }
 
-func (s *scanner) scan(urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) {
+func (s *scanner) scan(urlAction domain.UrlAction, parseHostAlone bool, params config.Params) {
 	lastIndex := 0
 	for s.index = 0; s.index < len(s.body); s.index++ {
 		lastIndex = s.index
 		if s.findAndSetPatterns(schemaPatterns, &s.url.Scheme) && s.findSchemeSeparator() && s.findDomain() {
-			s.scanForPortAndPath(urlAction, aloneDomainNameAlso, params)
+			s.scanForPortAndPath(urlAction, parseHostAlone, params)
 
 			if urlAction != nil {
 				s.url = urlAction(s.url, params.ScannerProxyUrl, params.ScannerTargetUrl)
@@ -168,7 +168,7 @@ func (s *scanner) scan(urlAction domain.UrlAction, aloneDomainNameAlso bool, par
 			s.index -= 1
 		} else if s.findSchemeSeparator() && s.findDomain() {
 			s.url.Scheme = nil
-			s.scanForPortAndPath(urlAction, aloneDomainNameAlso, params)
+			s.scanForPortAndPath(urlAction, parseHostAlone, params)
 			if urlAction != nil {
 				s.url = urlAction(s.url, params.ScannerProxyUrl, params.ScannerTargetUrl)
 				s.newBody = append(s.newBody, s.url.SchemeSeparator...)
@@ -179,11 +179,11 @@ func (s *scanner) scan(urlAction domain.UrlAction, aloneDomainNameAlso bool, par
 			s.url.Path = nil
 			s.url.DotSpecial = nil
 			s.index -= 1
-		} else if aloneDomainNameAlso && s.findDomain() {
+		} else if parseHostAlone && s.findDomain() {
 
 			s.url.Scheme = nil
 			s.url.SchemeSeparator = nil
-			s.scanForPortAndPath(urlAction, aloneDomainNameAlso, params)
+			s.scanForPortAndPath(urlAction, parseHostAlone, params)
 			if urlAction != nil {
 				s.url = urlAction(s.url, params.ScannerProxyUrl, params.ScannerTargetUrl)
 				s.newBody = append(s.newBody, s.url.Host...)
@@ -210,21 +210,21 @@ func NewScanner() *scanner {
 	return &s
 }
 
-func (s *scanner) Scan(body []byte, urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) []byte {
+func (s *scanner) Scan(body []byte, urlAction domain.UrlAction, parseHostAlone bool, params config.Params) []byte {
 	s.body = body
 	s.newBody = make([]byte, 0, len(body)+extendNewBodyByteSize)
-	s.scan(urlAction, aloneDomainNameAlso, params)
+	s.scan(urlAction, parseHostAlone, params)
 	if urlAction != nil {
 		return s.newBody
 	}
 	return nil
 }
 
-func (s *scanner) ScanAsynch(body []byte, urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params, newBody chan []byte) {
-	newBody <- s.Scan(body, urlAction, aloneDomainNameAlso, params)
+func (s *scanner) ScanAsynch(body []byte, urlAction domain.UrlAction, parseHostAlone bool, params config.Params, newBody chan []byte) {
+	newBody <- s.Scan(body, urlAction, parseHostAlone, params)
 }
 
-func scan(body []byte, urlAction domain.UrlAction, aloneDomainNameAlso bool, params config.Params) []byte {
+func scan(body []byte, urlAction domain.UrlAction, parseHostAlone bool, params config.Params) []byte {
 	s := NewScanner()
-	return s.Scan(body, urlAction, aloneDomainNameAlso, params)
+	return s.Scan(body, urlAction, parseHostAlone, params)
 }
