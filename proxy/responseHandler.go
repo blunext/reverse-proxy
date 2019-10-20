@@ -42,7 +42,7 @@ func ProcessResponse(params config.Params) func(response *http.Response) error {
 			}
 			ch := make(chan []byte)
 			s := scanner.NewScanner()
-			go s.ScanAsynch(body, scanner.ReplaceTargetToProxy, false, params, ch)
+			go s.ScanAsynch(body, scanner.ReplaceTargetToProxy, params, ch)
 			body = <-ch
 			response.ContentLength = int64(len(body))
 			response.Header.Set("Content-Length", strconv.Itoa(len(body)))
