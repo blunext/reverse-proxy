@@ -32,7 +32,7 @@ func initParams() config.Params {
 	local := flag.String("proxy", proxyUrl, "proxy url")
 	flag.StringVar(&params.CerFile, "certFile", "", "path to cert file")
 	flag.StringVar(&params.KeyFile, "keyFile", "", "path to key file")
-
+	parseHostAlone := flag.Bool("parseHostAlone", true, "replace ..............................................")
 	flag.Parse()
 
 	var err error
@@ -57,6 +57,8 @@ func initParams() config.Params {
 			os.Exit(0)
 		}
 	}
+
+	params.ParseHostAlone = *parseHostAlone
 
 	params.ScannerTargetUrl.Scheme = []byte(params.TargetUrl.Scheme)
 	params.ScannerTargetUrl.Host = []byte(params.TargetUrl.Host)

@@ -18,5 +18,6 @@ type Params struct {
 	ProxyUrl         *url.URL
 	ScannerTargetUrl domain.Url
 	ScannerProxyUrl  domain.Url
+	ParseHostAlone   bool
 	Config
 }
