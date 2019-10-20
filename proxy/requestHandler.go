@@ -13,7 +13,7 @@ func processSameHeaders(headers []string, urlAction domain.UrlAction, params con
 	var sameHeaders []string
 	for _, h := range headers {
 		s := scanner.NewScanner()
-		h = string(s.Scan([]byte(h), urlAction, true, params))
+		h = string(s.Scan([]byte(h), urlAction, params))
 		sameHeaders = append(sameHeaders, h)
 		//log.Printf("########: header: %v: %v", name, h)
 	}
