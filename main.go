@@ -24,7 +24,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func initParams() config.Params {
+func initParams(targetUrl, proxyUrl string) config.Params {
 
 	params := config.Params{}
 
@@ -83,7 +83,7 @@ func initParams() config.Params {
 
 func main() {
 
-	params := initParams()
+	params := initParams(_targetUrl, _proxyUrl)
 
 	reverseProxy := &httputil.ReverseProxy{
 		Director:       proxy.ProcessRequest(params),
@@ -110,8 +110,8 @@ func main() {
 }
 
 const (
-	targetUrl             string = "https://abc.xyz"
-	proxyUrl              string = "https://localhost:9013"
+	_targetUrl            string = "https://abc.xyz"
+	_proxyUrl             string = "https://localhost:9013"
 	debugBody             bool   = false
 	debug                 bool   = false
 	saveBodyRequestToFile bool   = false

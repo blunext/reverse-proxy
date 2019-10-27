@@ -6,127 +6,133 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 )
 
 // todo: https:\u002f\u002fprofile.mbank.pl:443\u002f_layouts\u002f15\u002fEditProfile.aspx?UserSettingsProvider=234bf0ed\u00252D70db\u00252D4158\u00252Da332\u00252D4dfd683b4148\u0026ReturnUrl=https\u00253A\u00252F\u00252Fintranet\u00252Embank\u00252Epl
 
-func config1(targetHost string) config.Params {
-	const (
-		//targetHost   string = "abc.com"
-		targetScheme string = "https"
-		proxyHost    string = "localhost"
-		proxyScheme  string = "http"
-		proxyPort    string = ":9012"
-	)
+func initParams(targetUrl, proxyUrl string) config.Params {
 
-	var proxyParams config.Params
+	params := config.Params{}
 
-	//err := errors.NewScanner("")
-	//if proxyParams.targetUrl, err = url.Parse(fmt.Sprintf("%s://%s", targetScheme, targetHost)); err != nil {
-	//	log.Panic("błędny url target")
-	//}
-	proxyParams.ScannerTargetUrl.Scheme = []byte(targetScheme)
-	proxyParams.ScannerTargetUrl.Host = []byte(targetHost)
+	params.TargetUrl, _ = url.ParseRequestURI(targetUrl)
+	params.ProxyUrl, _ = url.ParseRequestURI(proxyUrl)
 
-	//if proxyParams.proxyUrl, err = url.Parse(fmt.Sprintf("%s://%s%s", proxyScheme, proxyHost, proxyPort)); err != nil {
-	//	log.Panic("błędny url proxt")
-	//}
-	proxyParams.ScannerProxyUrl.Scheme = []byte(proxyScheme)
-	proxyParams.ScannerProxyUrl.Host = []byte(proxyHost)
-	proxyParams.ScannerProxyUrl.Port = []byte(proxyPort)
+	params.ParseHostAlone = true
 
-	return proxyParams
+	params.ScannerTargetUrl.Scheme = []byte(params.TargetUrl.Scheme)
+	params.ScannerTargetUrl.Host = []byte(params.TargetUrl.Host)
+
+	params.ScannerProxyUrl.Scheme = []byte(params.ProxyUrl.Scheme)
+
+	s := strings.Split(params.ProxyUrl.Host, ":")
+	if len(s) == 1 {
+		params.ScannerProxyUrl.Host = []byte(params.ProxyUrl.Host)
+		params.ScannerProxyUrl.Port = []byte(":80")
+	} else {
+		params.ScannerProxyUrl.Host = []byte(s[0])
+		params.ScannerProxyUrl.Port = []byte(":" + s[1])
+	}
+
+	params.Config.Debug = false
+	params.Config.DebugBody = false
+	params.Config.SaveBodyRequestToFile = false
+
+	return params
 }
 
 func TestSomething(t *testing.T) {
 
-	proxyParams := config1("abc.com")
+	//proxyParams := config1("abc.com")
+
+	proxyParams := initParams("https://abc.com", "http://localhost:9012")
 
 	var body, expected, bodyChanged []byte
 	//
 	body = []byte(`aaa s%2F%2Fs \u003A http endhttps, %3a//, http%3a//google.com:221/dsddsd?Sdad?DA/dsadas/#[]=1221 "http://dupa.com" :\\u002f\\u002f, \\u00253A\\u00252F\\u00252F dsda dsada http%3a//google.com .dsds ds d`)
 
-	bodyChanged = scan(body, nil, false, proxyParams)
+	bodyChanged = scan(body, nil, proxyParams)
 	assert.True(t, len(bodyChanged) == 0, "zwrócono nie puste body")
 	f := func(url, proxyUrl, targetUrl domain.Url) domain.Url { return url }
-	bodyChanged = scan(body, f, true, proxyParams)
+	bodyChanged = scan(body, f, proxyParams)
 	assert.Equal(t, body, bodyChanged, "powinny być takie same:\n"+string(bodyChanged)+"\n"+string(body))
 
 	body = []byte(`} else if( (document.location.href.indexOf('abc.com') !== -1 || document.location.href.indexOf('m.gazeta.pl') !== -1) ||`)
 	expected = []byte(`} else if( (document.location.href.indexOf('localhost:9012') !== -1 || document.location.href.indexOf('m.gazeta.pl') !== -1) ||`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
-	proxyParams = config1("www.abc.com")
+	proxyParams = initParams("https://www.abc.com", "http://localhost:9012")
 
 	body = []byte(`} else if( (document.location.href.indexOf('www.abc.com') !== -1 || document.location.href.indexOf('m.gazeta.pl') !== -1) ||`)
 	expected = []byte(`} else if( (document.location.href.indexOf('localhost:9012') !== -1 || document.location.href.indexOf('m.gazeta.pl') !== -1) ||`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
-	proxyParams = config1("abc.com")
+	proxyParams = initParams("https://abc.com", "http://localhost:9012")
 
 	body = []byte(`<img src="https:\/\/abc.com\/wp-admin\/admin-ajax.php" class="header__brand__image" title="" alt="naTemat.pl">`)
 	expected = []byte(`<img src="http:\/\/localhost:9012\/wp-admin\/admin-ajax.php" class="header__brand__image" title="" alt="naTemat.pl">`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`<img src="//abc.com/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
 	expected = []byte(`<img src="//localhost:9012/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`<img src="http://abc.com/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
 	expected = []byte(`<img src="http://localhost:9012/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(` abc.com/logo abc.com/logo abc.com/logo `)
 	expected = []byte(` localhost:9012/logo localhost:9012/logo localhost:9012/logo `)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(` abc.com abc.com abc.com `)
 	expected = []byte(` localhost:9012 localhost:9012 localhost:9012 `)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`<img src="http://localhost:9012/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
 	expected = []byte(`<img src="https://abc.com/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
-	bodyChanged = scan(body, ReplaceProxyToTarget, false, proxyParams)
+	bodyChanged = scan(body, ReplaceProxyToTarget, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`Set-Cookie: __cfduid=d4333a86847f959c46d24ed08545d9aac1557651193; expires=Mon, 11-May-20 08:53:13 GMT; path=/; domain=.abc.com; HttpOnly; Secure`)
 	expected = []byte(`Set-Cookie: __cfduid=d4333a86847f959c46d24ed08545d9aac1557651193; expires=Mon, 11-May-20 08:53:13 GMT; path=/; domain=.localhost:9012; HttpOnly; Secure`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`Set-Cookie: __cfduid=d4333a86847f959c46d24ed08545d9aac1557651193; expires=Mon, 11-May-20 08:53:13 GMT; path=/; domain=.localhost:9012; HttpOnly; Secure`)
 	expected = []byte(`Set-Cookie: __cfduid=d4333a86847f959c46d24ed08545d9aac1557651193; expires=Mon, 11-May-20 08:53:13 GMT; path=/; domain=.abc.com; HttpOnly; Secure`)
-	bodyChanged = scan(body, ReplaceProxyToTarget, true, proxyParams)
+	bodyChanged = scan(body, ReplaceProxyToTarget, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`<img src="http%3A\u002f\u002fabc.com/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
 	expected = []byte(`<img src="http%3A\u002f\u002flocalhost:9012/logo/" class="header__brand__image" title="" alt="naTemat.pl">`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`'ReturnUrl=https\u00253a\u00252f\u00252fabc.com dsds', 'Aktualizacja profilu`)
 	expected = []byte(`'ReturnUrl=http\u00253a\u00252f\u00252flocalhost:9012 dsds', 'Aktualizacja profilu`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`bla 'https\u00253A\u00252F\u00252Fabc\u00252Ecom/sasa', bla`)
 	expected = []byte(`bla 'http\u00253a\u00252f\u00252flocalhost:9012/sasa', bla`)
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	body = []byte(`'O mnie', 'https:\u002f\u002fabc.com\u002f_layouts\u002f15\u002fEditProfile.aspx?UserSettingsProvider=234bf0ed\u00252D70db\u00252D4158\u00252Da332\u00252D4dfd683b4148\u0026ReturnUrl=https\u00253A\u00252F\u00252Fabc\u00252Ecom/sasa', 'Aktualizacja profilu`)
 	expected = []byte(`'O mnie', 'http:\u002f\u002flocalhost:9012\u002f_layouts\u002f15\u002fEditProfile.aspx?UserSettingsProvider=234bf0ed\u00252D70db\u00252D4158\u00252Da332\u00252D4dfd683b4148\u0026ReturnUrl=http\u00253a\u00252f\u00252flocalhost:9012/sasa', 'Aktualizacja profilu`)
 	// http\u00253a\u00252f\u00252f -- to się zmienia
-	bodyChanged = scan(body, ReplaceTargetToProxy, true, proxyParams)
+	bodyChanged = scan(body, ReplaceTargetToProxy, proxyParams)
 	assert.Equal(t, expected, bodyChanged, "nie zmieniły się\n"+string(bodyChanged)+"\n"+string(expected))
 
 	//do analizy
@@ -189,7 +195,7 @@ func TestSomething(t *testing.T) {
 
 func BenchmarkSearch(b *testing.B) {
 
-	proxyParams := config1("abc.com")
+	proxyParams := initParams("https://abc.com", "http://localhost:9012")
 
 	body := []byte(`aaa s%2F%2Fs \u003A http endhttps, %3a//, http%3a//google.com:221/dsddsd?Sdad?DA/dsadas/#[]=1221 "http://dupa.com" :\\u002f\\u002f, \\u00253A\\u00252F\\u00252F dsda dsada http%3a//google.com .dsds ds d`)
 	//f, err := os.Create("bench.out")
@@ -202,7 +208,7 @@ func BenchmarkSearch(b *testing.B) {
 	//	panic(err)
 	//}
 	for n := 0; n < b.N; n++ {
-		scan(body, nil, true, proxyParams)
+		scan(body, nil, proxyParams)
 	}
 	//trace.Stop()
 	//b.StopTimer()
@@ -210,12 +216,12 @@ func BenchmarkSearch(b *testing.B) {
 }
 
 func BenchmarkReplace(b *testing.B) {
-	proxyParams := config1("abc.com")
+	proxyParams := initParams("https://abc.com", "http://localhost:9012")
 
 	//body := []byte(`aaa s%2F%2Fs \u003A http endhttps, %3a//, http%3a//google.com:221/dsddsd?Sdad?DA/dsadas/#[]=1221 "http://dupa.com" :\\u002f\\u002f, \\u00253A\\u00252F\\u00252F dsda dsada http%3a//google.com .dsds ds d`)
 	body := getFileBytes()
 	for n := 0; n < b.N; n++ {
-		scan(body, ReplaceProxyToTarget, true, proxyParams)
+		scan(body, ReplaceProxyToTarget, proxyParams)
 	}
 }
 
