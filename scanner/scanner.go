@@ -179,7 +179,7 @@ func (s *scanner) scan(urlAction domain.UrlAction, params config.Params) {
 			s.url.Path = nil
 			s.url.DotSpecial = nil
 			s.index -= 1
-		} else if params.ParseHostAlone && s.findDomain() {
+		} else if params.ParseWithoutSchema && s.findDomain() {
 
 			s.url.Scheme = nil
 			s.url.SchemeSeparator = nil

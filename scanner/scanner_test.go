@@ -21,7 +21,7 @@ func initParams(targetUrl, proxyUrl string) config.Params {
 	params.TargetUrl, _ = url.ParseRequestURI(targetUrl)
 	params.ProxyUrl, _ = url.ParseRequestURI(proxyUrl)
 
-	params.ParseHostAlone = true
+	params.ParseWithoutSchema = true
 
 	params.ScannerTargetUrl.Scheme = []byte(params.TargetUrl.Scheme)
 	params.ScannerTargetUrl.Host = []byte(params.TargetUrl.Host)

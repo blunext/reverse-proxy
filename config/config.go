@@ -14,10 +14,10 @@ type Config struct {
 }
 
 type Params struct {
-	TargetUrl        *url.URL
-	ProxyUrl         *url.URL
-	ScannerTargetUrl domain.Url
-	ScannerProxyUrl  domain.Url
-	ParseHostAlone   bool
+	TargetUrl          *url.URL
+	ProxyUrl           *url.URL
+	ScannerTargetUrl   domain.Url
+	ScannerProxyUrl    domain.Url
+	ParseWithoutSchema bool
 	Config
 }
