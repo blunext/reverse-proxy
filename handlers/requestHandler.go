@@ -1,4 +1,4 @@
-package proxy
+package handlers
 
 import (
 	"Proxy/config"

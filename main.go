@@ -2,7 +2,7 @@ package main
 
 import (
 	"Proxy/config"
-	"Proxy/proxy"
+	"Proxy/handlers"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -86,8 +86,8 @@ func main() {
 	params := initParams(_targetUrl, _proxyUrl)
 
 	reverseProxy := &httputil.ReverseProxy{
-		Director:       proxy.ProcessRequest(params),
-		ModifyResponse: proxy.ProcessResponse(params),
+		Director:       handlers.ProcessRequest(params),
+		ModifyResponse: handlers.ProcessResponse(params),
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,
@@ -110,7 +110,7 @@ func main() {
 }
 
 const (
-	_targetUrl            string = "https://abc.xyz"
+	_targetUrl            string = "https://en.wikipedia.org"
 	_proxyUrl             string = "https://localhost:9013"
 	debugBody             bool   = false
 	debug                 bool   = false
